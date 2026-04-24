@@ -12,6 +12,11 @@ function normaliseName(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]/g, '')
 }
 
+// Skip non-person entries (service accounts, org-level rows, etc.)
+function isServiceAccount(userId: string, userName: string): boolean {
+  return userId.startsWith('(') || userName.toLowerCase().includes('org service')
+}
+
 function parseRow(line: string): string[] {
   return line.split(',').map((c) => c.trim().replace(/^"|"$/g, ''))
 }
@@ -142,7 +147,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (stdMatch) {
         const month = stdMatch[1]
         const timestamp = `${month}-01T00:00:00.000Z`
-        const { records, skipped } = parseSpendReport(csvText, timestamp)
+        const { records: rawRecords, skipped } = parseSpendReport(csvText, timestamp)
+        const records = rawRecords.filter((r) => !isServiceAccount(r.user_id, r.user_name))
 
         if (records.length === 0) {
           return res.status(400).json({ error: 'No valid records found in Claude CSV.' })
@@ -200,6 +206,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const userName = userNameCol >= 0 ? (cols[userNameCol] ?? '') : userId
         if (!userId && !userName) { skippedCount++; continue }
         const stableId = userId || normaliseName(userName)
+        if (isServiceAccount(stableId, userName)) { skippedCount++; continue }
 
         const rowMonth = monthCol >= 0 && monthCol !== -1
           ? (cols[monthCol] ?? '').trim().slice(0, 7)

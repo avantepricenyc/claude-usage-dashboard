@@ -168,6 +168,10 @@ function normaliseName(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
+function isServiceAccount(userId: string, userName: string): boolean {
+  return userId.startsWith("(") || userName.toLowerCase().includes("org service");
+}
+
 function ensureDb() {
   if (!fs.existsSync(DB_PATH)) {
     throw new Error("Database not found. Run: npx tsx scripts/build-db.ts first.");
@@ -307,7 +311,8 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
       if (stdMatch) {
         const month     = stdMatch[1];
         const timestamp = `${month}-01T00:00:00.000Z`;
-        const { records, skipped } = parseSpendReport(csvText, timestamp);
+        const { records: rawRecords, skipped } = parseSpendReport(csvText, timestamp);
+        const records = rawRecords.filter((r) => !isServiceAccount(r.user_id, r.user_name));
 
         if (records.length === 0) {
           db.close();
@@ -378,6 +383,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
           const userName = userNameCol >= 0 ? cols[userNameCol] ?? "" : userId;
           if (!userId && !userName) { skipped++; continue; }
           const stableId = userId || normaliseName(userName);
+          if (isServiceAccount(stableId, userName)) { skipped++; continue; }
 
           // Resolve row month
           const rowMonth = (monthCol >= 0 && monthCol !== -1 && monthCol !== undefined)
