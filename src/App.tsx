@@ -1,6 +1,11 @@
 import "./index.css";
 import { Dashboard } from "./pages/Dashboard";
+import { PasswordGate } from "./components/PasswordGate";
 
 export default function App() {
-  return <Dashboard />;
+  return (
+    <PasswordGate>
+      <Dashboard />
+    </PasswordGate>
+  );
 }
