@@ -26,7 +26,7 @@ export function PasswordGate({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <Card className="w-full max-w-sm mx-4 shadow-xl">
         <CardHeader className="pb-4">
-          <CardTitle className="text-base text-center">Usage Dashboard</CardTitle>
+          <CardTitle className="text-base text-center">metrics await...</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
